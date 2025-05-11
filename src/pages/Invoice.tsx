@@ -151,13 +151,14 @@ const Invoice = () => {
       
       // Save the invoice to the database
       try {
-        const { error: saveError } = await supabase
-          .from('invoices')
+        // Use type assertion to bypass TypeScript error for invoices table
+        const { error: saveError } = await (supabase
+          .from('invoices' as any)
           .insert({
             invoice_number: data.invoiceNumber,
             data: data,
             user_id: user?.id
-          });
+          }) as any);
         
         if (saveError) {
           console.error('Error saving invoice:', saveError);

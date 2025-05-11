@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,10 +32,10 @@ const InvoiceHistory = () => {
       
       try {
         // Using type assertion to bypass TypeScript error until types are properly updated
-        const { data, error } = await supabase
+        const { data, error } = await (supabase
           .from('invoices' as any)
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as any);
         
         if (error) {
           console.error('Error fetching invoices:', error);
