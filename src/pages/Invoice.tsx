@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -114,6 +113,73 @@ const Invoice = () => {
     fetchBusinessInfo();
   }, [user]);
   
+  useEffect(() => {
+    const loadInvoiceForEdit = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const invoiceId = params.get('edit');
+      
+      if (invoiceId && user) {
+        try {
+          const { data, error } = await supabase
+            .from('invoices')
+            .select('*')
+            .eq('id', invoiceId)
+            .single();
+            
+          if (error) {
+            console.error('Error fetching invoice:', error);
+            toast.error('Failed to load invoice for editing');
+            return;
+          }
+          
+          if (data) {
+            // Parse the JSON data and validate it
+            const invoiceData = JSON.parse(JSON.stringify(data.data)) as unknown;
+            if (isValidInvoiceData(invoiceData)) {
+              setInvoiceData(invoiceData);
+              setActiveTab('generate');
+              toast.success('Invoice loaded for editing');
+            } else {
+              toast.error('Invalid invoice data format');
+            }
+          }
+        } catch (error) {
+          console.error('Error loading invoice:', error);
+          toast.error('Failed to load invoice for editing');
+        }
+      }
+    };
+    
+    loadInvoiceForEdit();
+  }, [user]);
+  
+  const isValidInvoiceData = (data: any): data is InvoiceData => {
+    return (
+      typeof data === 'object' &&
+      data !== null &&
+      typeof data.invoiceNumber === 'string' &&
+      typeof data.date === 'string' &&
+      typeof data.dueDate === 'string' &&
+      typeof data.billTo === 'object' &&
+      data.billTo !== null &&
+      typeof data.billTo.name === 'string' &&
+      typeof data.billTo.address === 'string' &&
+      Array.isArray(data.items) &&
+      data.items.every((item: any) => 
+        typeof item === 'object' &&
+        item !== null &&
+        typeof item.description === 'string' &&
+        typeof item.quantity === 'number' &&
+        typeof item.unitPrice === 'number' &&
+        typeof item.amount === 'number'
+      ) &&
+      typeof data.subtotal === 'number' &&
+      typeof data.taxRate === 'number' &&
+      typeof data.taxAmount === 'number' &&
+      typeof data.total === 'number'
+    );
+  };
+  
   const handleGenerateInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -152,7 +218,6 @@ const Invoice = () => {
       
       // Save the invoice to the database
       try {
-        // Now we can use the properly created invoices table
         const { error: saveError } = await supabase
           .from('invoices')
           .insert({

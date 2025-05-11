@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from './ui/button';
-import { Eye, Download, Printer } from 'lucide-react';
+import { Eye, Download, Printer, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { downloadInvoice, printInvoice } from '@/utils/pdf-utils';
 import { StoredInvoice } from '@/lib/types';
@@ -86,6 +85,16 @@ const InvoiceHistory = () => {
     // For now just show a toast
     toast.info(`Viewing invoice #${invoice.invoice_number}`);
   };
+
+  const handleEditInvoice = async (invoice: StoredInvoice) => {
+    try {
+      // Navigate to the generate invoice tab with the invoice data
+      window.location.href = `/invoice?edit=${invoice.id}`;
+    } catch (error) {
+      console.error('Error preparing invoice for edit:', error);
+      toast.error('Failed to prepare invoice for editing');
+    }
+  };
   
   return (
     <Card>
@@ -119,6 +128,15 @@ const InvoiceHistory = () => {
                       >
                         <Eye className="h-3.5 w-3.5" />
                         <span>View</span>
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={() => handleEditInvoice(invoice)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span>Edit</span>
                       </Button>
                       <Button 
                         variant="outline" 
