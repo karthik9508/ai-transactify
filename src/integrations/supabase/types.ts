@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      invoice_counter: {
+        Row: {
+          counter: number
+          id: number
+        }
+        Insert: {
+          counter?: number
+          id?: number
+        }
+        Update: {
+          counter?: number
+          id?: number
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          invoice_number: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: string
+          invoice_number: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          invoice_number?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_address: string | null
@@ -83,7 +122,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_function_if_not_exists: {
+        Args: { function_name: string; function_body: string }
+        Returns: boolean
+      }
+      create_invoice_counter: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      create_invoices_table: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

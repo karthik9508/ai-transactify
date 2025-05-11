@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,11 +32,12 @@ const InvoiceHistory = () => {
       if (!user) return;
       
       try {
-        // Using type assertion to bypass TypeScript error until types are properly updated
-        const { data, error } = await (supabase
-          .from('invoices' as any)
+        // Fetch invoices from the database
+        // We now use the properly created invoices table
+        const { data, error } = await supabase
+          .from('invoices')
           .select('*')
-          .order('created_at', { ascending: false }) as any);
+          .order('created_at', { ascending: false });
         
         if (error) {
           console.error('Error fetching invoices:', error);
@@ -78,6 +80,13 @@ const InvoiceHistory = () => {
     }
   };
   
+  const handleViewInvoice = (invoice: StoredInvoice) => {
+    // You could implement navigation to a detailed invoice view
+    console.log('Viewing invoice:', invoice);
+    // For now just show a toast
+    toast.info(`Viewing invoice #${invoice.invoice_number}`);
+  };
+  
   return (
     <Card>
       <CardHeader>
@@ -102,7 +111,12 @@ const InvoiceHistory = () => {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={() => handleViewInvoice(invoice)}
+                      >
                         <Eye className="h-3.5 w-3.5" />
                         <span>View</span>
                       </Button>
