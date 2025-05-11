@@ -78,30 +78,6 @@ export type Database = {
         }
         Relationships: []
       }
-      invoices: {
-        Row: {
-          id: string
-          invoice_number: string
-          data: Json
-          user_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          invoice_number: string
-          data: Json
-          user_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          invoice_number?: string
-          data?: Json
-          user_id?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
