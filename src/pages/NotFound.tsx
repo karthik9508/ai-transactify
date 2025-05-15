@@ -1,12 +1,13 @@
 
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/AppSidebar';
+import AppLayout from '@/components/AppLayout';
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
 
 const NotFound = () => {
   const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     console.error(
@@ -15,22 +16,27 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
-  return (
-    <SidebarProvider>
-      <div className="flex w-full min-h-screen">
-        <AppSidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center p-8">
-            <h1 className="text-4xl font-bold mb-4">404</h1>
-            <p className="text-xl text-gray-600 mb-6">Oops! Page not found</p>
-            <p className="text-gray-500 mb-6">The page you're looking for doesn't exist or has been moved.</p>
-            <Button asChild>
-              <Link to="/">Return to Home</Link>
-            </Button>
-          </div>
-        </div>
+  const NotFoundContent = () => (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-center p-8">
+        <h1 className="text-4xl font-bold mb-4">404</h1>
+        <p className="text-xl text-gray-600 mb-6">Oops! Page not found</p>
+        <p className="text-gray-500 mb-6">The page you're looking for doesn't exist or has been moved.</p>
+        <Button asChild>
+          <Link to="/">Return to Home</Link>
+        </Button>
       </div>
-    </SidebarProvider>
+    </div>
+  );
+
+  return user ? (
+    <AppLayout>
+      <NotFoundContent />
+    </AppLayout>
+  ) : (
+    <div className="min-h-screen flex">
+      <NotFoundContent />
+    </div>
   );
 };
 

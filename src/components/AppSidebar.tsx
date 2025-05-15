@@ -1,3 +1,4 @@
+
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -46,7 +47,11 @@ export function AppSidebar() {
     setMounted(true);
   }, []);
   
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    // Check if current path starts with the given path (for nested routes)
+    return location.pathname === path || 
+           (path !== '/' && location.pathname.startsWith(path));
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -123,29 +128,33 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Reporting Group - NEW SECTION */}
+        {/* Reporting Group */}
         <SidebarGroup className="mt-6 px-3">
           <SidebarGroupLabel className="px-4 text-xs uppercase tracking-widest text-muted-foreground/80 font-semibold">
             Reporting
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/pl-account', '/balance-sheet', '/financial-analysis'].map((path, i) => {
+              {mounted && [
+                '/financials/pl-account', 
+                '/financials/balance-sheet', 
+                '/financials/analysis'
+              ].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
-                  '/pl-account': <BarChart3 className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/balance-sheet': <BookText className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/financial-analysis': <PieChart className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/financials/pl-account': <BarChart3 className={`${isCurrentActive ? 'text-primary' : ''}`} />,
+                  '/financials/balance-sheet': <BookText className={`${isCurrentActive ? 'text-primary' : ''}`} />,
+                  '/financials/analysis': <PieChart className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
-                  '/pl-account': 'P&L Account',
-                  '/balance-sheet': 'Balance Sheet',
-                  '/financial-analysis': 'Financial Analysis'
+                  '/financials/pl-account': 'P&L Account',
+                  '/financials/balance-sheet': 'Balance Sheet',
+                  '/financials/analysis': 'Financial Analysis'
                 };
                 const tooltips = {
-                  '/pl-account': 'Profit & Loss Account',
-                  '/balance-sheet': 'Balance Sheet',
-                  '/financial-analysis': 'Financial Analysis'
+                  '/financials/pl-account': 'Profit & Loss Account',
+                  '/financials/balance-sheet': 'Balance Sheet',
+                  '/financials/analysis': 'Financial Analysis'
                 };
                 
                 return (
@@ -184,19 +193,19 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/invoice', '/sales-report'].map((path, i) => {
+              {mounted && ['/invoice', '/reports/sales'].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
                   '/invoice': <FileText className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/sales-report': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/reports/sales': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
                   '/invoice': 'Invoice',
-                  '/sales-report': 'Sales Report'
+                  '/reports/sales': 'Sales Report'
                 };
                 const tooltips = {
                   '/invoice': 'Invoice',
-                  '/sales-report': 'Sales Report'
+                  '/reports/sales': 'Sales Report'
                 };
                 
                 return (
@@ -235,19 +244,19 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/purchase-orders', '/purchase-report'].map((path, i) => {
+              {mounted && ['/purchase-orders', '/reports/purchases'].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
                   '/purchase-orders': <ShoppingCart className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/purchase-report': <TrendingDown className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/reports/purchases': <TrendingDown className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
                   '/purchase-orders': 'Purchase Orders',
-                  '/purchase-report': 'Purchase Report'
+                  '/reports/purchases': 'Purchase Report'
                 };
                 const tooltips = {
                   '/purchase-orders': 'Purchase Orders',
-                  '/purchase-report': 'Purchase Report'
+                  '/reports/purchases': 'Purchase Report'
                 };
                 
                 return (
@@ -286,16 +295,16 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/expense-report'].map((path, i) => {
+              {mounted && ['/reports/expenses'].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
-                  '/expense-report': <Receipt className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/reports/expenses': <Receipt className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
-                  '/expense-report': 'Expense Report'
+                  '/reports/expenses': 'Expense Report'
                 };
                 const tooltips = {
-                  '/expense-report': 'Expense Report'
+                  '/reports/expenses': 'Expense Report'
                 };
                 
                 return (

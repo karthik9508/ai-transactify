@@ -3,10 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AppLayout from "@/components/AppLayout";
+
+// Import pages
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
@@ -22,9 +25,8 @@ import PLAccount from "./pages/PLAccount";
 import BalanceSheet from "./pages/BalanceSheet";
 import FinancialAnalysis from "./pages/FinancialAnalysis";
 import Settings from "./pages/Settings";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import AppSidebar from "@/components/AppSidebar";
 
+// Create a single instance of QueryClient
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,137 +38,149 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public routes without sidebar */}
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="*" element={<NotFound />} />
               
-              {/* Protected routes with sidebar */}
+              {/* Protected routes with AppLayout */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
-                      <Dashboard />
-                    </div>
-                  </SidebarProvider>
+                  <AppLayout>
+                    <Dashboard />
+                  </AppLayout>
                 </ProtectedRoute>
               } />
-              <Route path="/transactions" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+              
+              {/* Transactions routes */}
+              <Route path="/transactions">
+                <Route index element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <Transactions />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/invoice" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path=":transactionId" element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Transactions />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
+              
+              {/* Invoice routes */}
+              <Route path="/invoice">
+                <Route index element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <Invoice />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/sales-report" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path=":invoiceId" element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Invoice />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
+              
+              {/* Reports routes */}
+              <Route path="/reports">
+                <Route path="sales" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <SalesReport />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/purchase-orders" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
-                      <PurchaseOrders />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/purchase-report" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="purchases" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <PurchaseReport />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/expense-report" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="expenses" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <ExpenseReport />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
               
-              {/* New Reporting routes */}
-              <Route path="/pl-account" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+              {/* Financial analysis routes */}
+              <Route path="/financials">
+                <Route path="pl-account" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <PLAccount />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/balance-sheet" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="balance-sheet" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <BalanceSheet />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
-              <Route path="/financial-analysis" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="analysis" element={
+                  <ProtectedRoute>
+                    <AppLayout>
                       <FinancialAnalysis />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
               
-              {/* Settings route */}
-              <Route path="/settings" element={
-                <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
-                      <Settings />
-                    </div>
-                  </SidebarProvider>
-                </ProtectedRoute>
-              } />
+              {/* Purchase orders */}
+              <Route path="/purchase-orders">
+                <Route index element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PurchaseOrders />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path=":orderId" element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <PurchaseOrders />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
               
+              {/* User routes */}
               <Route path="/profile" element={
                 <ProtectedRoute>
-                  <SidebarProvider>
-                    <div className="flex w-full min-h-screen">
-                      <AppSidebar />
-                      <Profile />
-                    </div>
-                  </SidebarProvider>
+                  <AppLayout>
+                    <Profile />
+                  </AppLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Settings />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              
+              {/* Legacy route redirects */}
+              <Route path="/sales-report" element={<Navigate to="/reports/sales" replace />} />
+              <Route path="/purchase-report" element={<Navigate to="/reports/purchases" replace />} />
+              <Route path="/expense-report" element={<Navigate to="/reports/expenses" replace />} />
+              <Route path="/pl-account" element={<Navigate to="/financials/pl-account" replace />} />
+              <Route path="/balance-sheet" element={<Navigate to="/financials/balance-sheet" replace />} />
+              <Route path="/financial-analysis" element={<Navigate to="/financials/analysis" replace />} />
+              
+              {/* 404 route */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

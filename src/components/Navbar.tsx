@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -64,13 +65,13 @@ const Navbar = () => {
                   <span>Dashboard</span>
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={location.pathname === '/transactions' ? 'bg-muted' : ''}>
+              <Button asChild variant="ghost" className={location.pathname.startsWith('/transactions') ? 'bg-muted' : ''}>
                 <Link to="/transactions" className="flex items-center space-x-1">
                   <PlusCircle className="w-4 h-4 mr-1" />
                   <span>New Transaction</span>
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className={location.pathname === '/invoice' ? 'bg-muted' : ''}>
+              <Button asChild variant="ghost" className={location.pathname.startsWith('/invoice') ? 'bg-muted' : ''}>
                 <Link to="/invoice" className="flex items-center space-x-1">
                   <FileText className="w-4 h-4 mr-1" />
                   <span>Invoice</span>
