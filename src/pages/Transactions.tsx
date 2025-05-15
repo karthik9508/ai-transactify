@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/AppSidebar';
@@ -104,7 +103,7 @@ const Transactions = () => {
       const dueDateStr = dueDate.toISOString().split('T')[0];
       
       // Create invoice data
-      const invoiceData: InvoiceData = {
+      const invoiceDataObj: InvoiceData = {
         invoiceNumber: invoiceNumber,
         date: currentDate,
         dueDate: dueDateStr,
@@ -133,11 +132,11 @@ const Transactions = () => {
       };
       
       // Save the invoice to the database
-      const { data: invoiceData, error: invoiceError } = await supabase
+      const { data: savedInvoice, error: invoiceError } = await supabase
         .from('invoices')
         .insert({
           invoice_number: invoiceNumber,
-          data: invoiceData,
+          data: invoiceDataObj as any, // Cast to any to bypass the type check
           user_id: user.id
         })
         .select('id')
@@ -148,7 +147,7 @@ const Transactions = () => {
         throw invoiceError;
       }
       
-      return invoiceData.id;
+      return savedInvoice.id;
     } catch (error) {
       console.error('Failed to generate invoice:', error);
       toast({
