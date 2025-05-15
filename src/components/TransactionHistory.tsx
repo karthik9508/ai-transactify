@@ -63,7 +63,7 @@ const TransactionHistory = ({
 
   useEffect(() => {
     fetchTransactionData();
-  }, [fetchTransactions, filterTypes, initialTransactions, toast]);
+  }, [fetchTransactions, filterTypes, initialTransactions]);
   
   // Handle transaction updates
   const handleTransactionUpdated = () => {
@@ -114,6 +114,7 @@ const TransactionHistory = ({
               key={transaction.id} 
               transaction={transaction} 
               onTransactionUpdated={handleTransactionUpdated} 
+              showInvoiceLink={transaction.type === 'sale' && transaction.invoice_id ? true : false}
             />
           ))}
         </div>

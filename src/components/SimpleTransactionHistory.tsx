@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Transaction } from '@/lib/types';
 import TransactionCard from './TransactionCard';
@@ -107,7 +108,8 @@ const SimpleTransactionHistory = ({
             <TransactionCard 
               key={transaction.id} 
               transaction={transaction} 
-              onTransactionUpdated={onTransactionUpdated} 
+              onTransactionUpdated={onTransactionUpdated}
+              showInvoiceLink={transaction.type === 'sale' && transaction.invoice_id ? true : false}
             />
           ))}
         </div>
@@ -120,4 +122,4 @@ const SimpleTransactionHistory = ({
   );
 };
 
-export default SimpleTransactionHistory; 
+export default SimpleTransactionHistory;

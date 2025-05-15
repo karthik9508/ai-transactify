@@ -1,268 +1,181 @@
 
+import React, { useState } from 'react';
 import { Transaction } from '@/lib/types';
-import { formatDistanceToNow } from 'date-fns';
-import { ChevronRight, ArrowUp, ArrowDown, ShoppingCart, DollarSign, Pencil, Trash2 } from 'lucide-react';
-import { 
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Edit2, Trash2, FileText } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from '@/context/AuthContext';
+import { format, isValid, parseISO } from 'date-fns';
 
 interface TransactionCardProps {
   transaction: Transaction;
+  showActions?: boolean;
   onTransactionUpdated?: () => void;
+  showInvoiceLink?: boolean;
 }
 
-const TransactionCard = ({ transaction, onTransactionUpdated }: TransactionCardProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+const TransactionCard: React.FC<TransactionCardProps> = ({ 
+  transaction, 
+  showActions = true,
+  onTransactionUpdated,
+  showInvoiceLink = false
+}) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [updatedTransaction, setUpdatedTransaction] = useState({ ...transaction });
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-
-  const getIcon = () => {
-    switch (transaction.type) {
-      case 'income':
-        return <ArrowDown className="h-5 w-5 text-green-500" />;
-      case 'expense':
-        return <ArrowUp className="h-5 w-5 text-red-500" />;
-      case 'purchase':
-        return <ShoppingCart className="h-5 w-5 text-blue-500" />;
-      case 'sale':
-        return <DollarSign className="h-5 w-5 text-purple-500" />;
-      default:
-        return <ChevronRight className="h-5 w-5 text-gray-500" />;
-    }
-  };
   
-  const getTypeLabel = () => {
-    switch (transaction.type) {
-      case 'income':
-        return 'Income';
-      case 'expense':
-        return 'Expense';
-      case 'purchase':
-        return 'Purchase';
-      case 'sale':
-        return 'Sale';
-      default:
-        return transaction.type;
-    }
-  };
-  
-  const getAmountClass = () => {
-    switch (transaction.type) {
-      case 'income':
-      case 'sale':
-        return 'text-green-600 dark:text-green-400';
-      case 'expense':
-      case 'purchase':
-        return 'text-red-600 dark:text-red-400';
-      default:
-        return 'text-foreground';
-    }
-  };
-  
-  const getAmountSign = () => {
-    switch (transaction.type) {
-      case 'income':
-      case 'sale':
-        return '+';
-      case 'expense':
-      case 'purchase':
-        return '-';
-      default:
-        return '';
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleDelete = () => {
-    setIsDeleting(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
+  // Format the date string
+  const formatDate = (dateString: string) => {
     try {
-      const { error } = await supabase
-        .from('transactions')
-        .update({
-          description: updatedTransaction.description,
-          amount: updatedTransaction.amount,
-          category: updatedTransaction.category,
-          type: updatedTransaction.type
-        })
-        .eq('id', transaction.id)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+      // First try to parse as ISO
+      const date = parseISO(dateString);
+      if (isValid(date)) {
+        return format(date, 'MMM d, yyyy');
+      }
       
-      toast.success('Transaction updated successfully');
-      setIsEditing(false);
-      if (onTransactionUpdated) onTransactionUpdated();
-    } catch (error) {
-      console.error('Error updating transaction:', error);
-      toast.error('Failed to update transaction');
-    } finally {
-      setIsLoading(false);
+      // If not valid ISO, try other format
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // months are 0-indexed in JS
+        const day = parseInt(parts[2]);
+        const dateObj = new Date(year, month, day);
+        if (isValid(dateObj)) {
+          return format(dateObj, 'MMM d, yyyy');
+        }
+      }
+      
+      // Default fallback
+      return dateString;
+    } catch (e) {
+      return dateString; // Fallback to original string
     }
   };
-
-  const handleConfirmDelete = async () => {
-    if (!user) return;
-
-    setIsLoading(true);
+  
+  const displayDate = formatDate(transaction.date);
+  
+  // Define type-specific style classes
+  const getTypeStyles = () => {
+    switch(transaction.type) {
+      case 'income':
+        return 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400';
+      case 'expense':
+        return 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400';
+      case 'purchase':
+        return 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'sale':
+        return 'text-purple-600 bg-purple-50 dark:bg-purple-900/20 dark:text-purple-400';
+      default:
+        return 'text-gray-600 bg-gray-50 dark:bg-gray-800 dark:text-gray-400';
+    }
+  };
+  
+  const handleDelete = async () => {
     try {
+      setIsDeleting(true);
+      
       const { error } = await supabase
         .from('transactions')
         .delete()
-        .eq('id', transaction.id)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
+        .eq('id', transaction.id);
+        
+      if (error) {
+        throw error;
+      }
       
       toast.success('Transaction deleted successfully');
-      setIsDeleting(false);
-      if (onTransactionUpdated) onTransactionUpdated();
+      if (onTransactionUpdated) {
+        onTransactionUpdated();
+      }
     } catch (error) {
       console.error('Error deleting transaction:', error);
       toast.error('Failed to delete transaction');
     } finally {
-      setIsLoading(false);
+      setIsDeleting(false);
     }
   };
   
-  const timeAgo = formatDistanceToNow(new Date(transaction.created_at), { addSuffix: true });
+  const viewInvoice = () => {
+    if (transaction.invoice_id) {
+      // Navigate to the invoice page with the invoice ID
+      window.location.href = `/invoice?edit=${transaction.invoice_id}`;
+    }
+  };
   
   return (
-    <>
-      <ContextMenu>
-        <ContextMenuTrigger>
-          <div className="glass-panel p-4 transition-all duration-300 hover:shadow-md cursor-pointer group">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 rounded-full bg-primary/10 transition-colors group-hover:bg-primary/20">
-                {getIcon()}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-base font-medium truncate">{transaction.description}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{transaction.category} • {timeAgo}</p>
-                  </div>
-                  <div className={`text-right ${getAmountClass()}`}>
-                    <p className="text-base font-semibold">{getAmountSign()}₹{transaction.amount.toFixed(2)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{getTypeLabel()}</p>
-                  </div>
-                </div>
-              </div>
+    <Card className="overflow-hidden border-l-4" style={{ borderLeftColor: 
+      transaction.type === 'income' ? 'rgb(34, 197, 94)' : 
+      transaction.type === 'expense' ? 'rgb(239, 68, 68)' : 
+      transaction.type === 'purchase' ? 'rgb(59, 130, 246)' : 
+      'rgb(168, 85, 247)' // sale
+    }}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="mb-1">
+              <span className={`text-sm font-medium px-2 py-1 rounded-full ${getTypeStyles()}`}>
+                {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+              </span>
+              <span className="text-xs text-muted-foreground ml-2">
+                {displayDate}
+              </span>
+              {showInvoiceLink && transaction.invoice_id && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="ml-2 text-xs flex items-center gap-1"
+                  onClick={viewInvoice}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  View Invoice
+                </Button>
+              )}
             </div>
+            <p className="font-medium">{transaction.description}</p>
+            <p className="text-sm text-muted-foreground">Category: {transaction.category}</p>
           </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          <ContextMenuItem onSelect={handleEdit} className="cursor-pointer">
-            <Pencil className="mr-2 h-4 w-4" /> Edit
-          </ContextMenuItem>
-          <ContextMenuItem onSelect={handleDelete} className="cursor-pointer text-destructive">
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-
-      {/* Edit Transaction Dialog */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Edit Transaction</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <label htmlFor="description" className="text-sm font-medium">Description</label>
-              <Input
-                id="description"
-                value={updatedTransaction.description}
-                onChange={(e) => setUpdatedTransaction({...updatedTransaction, description: e.target.value})}
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="amount" className="text-sm font-medium">Amount</label>
-              <Input
-                id="amount"
-                type="number"
-                value={updatedTransaction.amount}
-                onChange={(e) => setUpdatedTransaction({...updatedTransaction, amount: parseFloat(e.target.value)})}
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="category" className="text-sm font-medium">Category</label>
-              <Input
-                id="category"
-                value={updatedTransaction.category}
-                onChange={(e) => setUpdatedTransaction({...updatedTransaction, category: e.target.value})}
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="type" className="text-sm font-medium">Type</label>
-              <Select
-                value={updatedTransaction.type}
-                onValueChange={(value) => setUpdatedTransaction({
-                  ...updatedTransaction, 
-                  type: value as 'income' | 'expense' | 'purchase' | 'sale'
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="income">Income</SelectItem>
-                  <SelectItem value="expense">Expense</SelectItem>
-                  <SelectItem value="purchase">Purchase</SelectItem>
-                  <SelectItem value="sale">Sale</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="text-right">
+            <p className={`font-semibold text-lg ${
+              ['income', 'sale'].includes(transaction.type) 
+                ? 'text-green-600 dark:text-green-400' 
+                : 'text-red-600 dark:text-red-400'
+            }`}>
+              {['income', 'sale'].includes(transaction.type) ? '+' : '−'} ₹{transaction.amount.toLocaleString()}
+            </p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-            <Button onClick={handleSaveEdit} disabled={isLoading}>
-              {isLoading ? 'Saving...' : 'Save changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleting} onOpenChange={setIsDeleting}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Are you sure you want to delete this transaction? This action cannot be undone.</p>
+        </div>
+        
+        {showActions && (
+          <div className="flex justify-end mt-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this transaction? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDelete} 
+                    disabled={isDeleting} 
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleting(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleConfirmDelete} disabled={isLoading}>
-              {isLoading ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

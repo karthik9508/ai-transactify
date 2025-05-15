@@ -8,6 +8,7 @@ export interface Transaction {
   date: string;
   created_at: string;
   user_id?: string;
+  invoice_id?: string;  // Added field to link to invoices
 }
 
 export type TransactionType = 'income' | 'expense' | 'purchase' | 'sale';
