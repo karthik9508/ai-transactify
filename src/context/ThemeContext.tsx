@@ -1,11 +1,10 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "system";
 
 type ThemeContextType = {
   theme: Theme;
-  toggleTheme: () => void;
+  setTheme: (theme: Theme) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,35 +15,42 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     if (typeof window !== 'undefined') {
       // Check if we're running in the browser environment
       const savedTheme = localStorage.getItem("theme") as Theme;
-      // Check if the user has set a preference in the OS
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      
-      return savedTheme || (prefersDark ? "dark" : "light");
+      return savedTheme || "system";
     }
-    // Default to light theme if not in browser
-    return "light";
+    // Default to system theme if not in browser
+    return "system";
   });
-
-  // Toggle between light and dark themes
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
-  };
 
   // Update localStorage and apply the theme class when theme changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem("theme", theme);
       
-      if (theme === "dark") {
-        document.documentElement.classList.add("dark");
+      if (theme === "system") {
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.classList.toggle("dark", systemTheme === "dark");
       } else {
-        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.toggle("dark", theme === "dark");
       }
     }
   }, [theme]);
 
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme === "system") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      
+      const handleChange = (e: MediaQueryListEvent) => {
+        document.documentElement.classList.toggle("dark", e.matches);
+      };
+      
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
+    }
+  }, [theme]);
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );

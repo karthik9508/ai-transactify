@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,30 +5,34 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
-import { Settings as SettingsIcon } from 'lucide-react';
+import { Settings as SettingsIcon, Monitor, Moon, Sun } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const Settings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [emailNotifications, setEmailNotifications] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    // Demo effect: load settings from localStorage
+    // Load email notifications setting from localStorage
     const savedEmailNotifications = localStorage.getItem('emailNotifications') === 'true';
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    
     setEmailNotifications(savedEmailNotifications);
-    setDarkMode(savedDarkMode);
   }, []);
   
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Demo effect: save settings to localStorage
+    // Save email notifications setting to localStorage
     localStorage.setItem('emailNotifications', emailNotifications.toString());
-    localStorage.setItem('darkMode', darkMode.toString());
     
     toast({
       title: "Settings saved",
@@ -72,15 +75,36 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label>Dark Mode</Label>
+                  <Label>Theme</Label>
                   <p className="text-sm text-muted-foreground">
-                    Switch between light and dark theme
+                    Choose your preferred theme
                   </p>
                 </div>
-                <Switch 
-                  checked={darkMode}
-                  onCheckedChange={setDarkMode}
-                />
+                <Select value={theme} onValueChange={setTheme}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="light">
+                      <div className="flex items-center">
+                        <Sun className="mr-2 h-4 w-4" />
+                        <span>Light</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="dark">
+                      <div className="flex items-center">
+                        <Moon className="mr-2 h-4 w-4" />
+                        <span>Dark</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="system">
+                      <div className="flex items-center">
+                        <Monitor className="mr-2 h-4 w-4" />
+                        <span>System</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
