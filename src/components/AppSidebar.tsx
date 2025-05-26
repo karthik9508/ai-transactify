@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sidebar,
@@ -28,7 +27,8 @@ import {
   PieChart,
   BookText,
   MessageCircle,
-  HelpCircle
+  HelpCircle,
+  FileCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/context/AuthContext';
@@ -193,19 +193,22 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/invoice', '/reports/sales'].map((path, i) => {
+              {mounted && ['/invoice', '/reports/sales', '/sales/statements'].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
                   '/invoice': <FileText className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/reports/sales': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/reports/sales': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />,
+                  '/sales/statements': <FileCheck className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
                   '/invoice': 'Invoice',
-                  '/reports/sales': 'Sales Report'
+                  '/reports/sales': 'Sales Report',
+                  '/sales/statements': 'Statements'
                 };
                 const tooltips = {
                   '/invoice': 'Invoice',
-                  '/reports/sales': 'Sales Report'
+                  '/reports/sales': 'Sales Report',
+                  '/sales/statements': 'Customer Statements'
                 };
                 
                 return (

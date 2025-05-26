@@ -25,6 +25,7 @@ import PLAccount from "./pages/PLAccount";
 import BalanceSheet from "./pages/BalanceSheet";
 import FinancialAnalysis from "./pages/FinancialAnalysis";
 import Settings from "./pages/Settings";
+import Statements from "./pages/Statements";
 
 // Create a single instance of QueryClient
 const queryClient = new QueryClient();
@@ -82,6 +83,17 @@ const App = () => (
                   <ProtectedRoute>
                     <AppLayout>
                       <Invoice />
+                    </AppLayout>
+                  </ProtectedRoute>
+                } />
+              </Route>
+              
+              {/* Sales routes */}
+              <Route path="/sales">
+                <Route path="statements" element={
+                  <ProtectedRoute>
+                    <AppLayout>
+                      <Statements />
                     </AppLayout>
                   </ProtectedRoute>
                 } />
