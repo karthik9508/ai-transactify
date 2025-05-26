@@ -17,12 +17,16 @@ interface CustomerStatement {
   id: string;
   customerName: string;
   customerEmail: string;
-  totalAmount: number;
-  paidAmount: number;
+  totalSales: number;
+  totalPayments: number;
   balanceAmount: number;
   invoiceCount: number;
+  transactionCount: number;
   lastInvoiceDate: string;
+  lastTransactionDate: string;
   status: 'paid' | 'pending' | 'overdue';
+  invoices: any[];
+  transactions: any[];
 }
 
 const Statements = () => {
@@ -37,61 +41,141 @@ const Statements = () => {
     try {
       setLoading(true);
       
-      // Fetch all invoices to calculate customer statements
-      const { data: invoices, error } = await supabase
+      // Fetch all invoices with their linked transactions
+      const { data: invoices, error: invoicesError } = await supabase
         .from('invoices')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        throw error;
+      if (invoicesError) {
+        throw invoicesError;
       }
 
-      // Group invoices by customer and calculate statements
+      // Fetch all transactions
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (transactionsError) {
+        throw transactionsError;
+      }
+
+      // Group by customer and calculate statements
       const customerMap = new Map<string, any>();
       
+      // Process invoices first
       invoices?.forEach((invoice) => {
         const data = invoice.data as any;
-        const customerKey = `${data.billTo.name}-${data.billTo.email || ''}`;
+        const customerKey = `${data.billTo.name}-${data.billTo.email || 'no-email'}`;
         
         if (!customerMap.has(customerKey)) {
           customerMap.set(customerKey, {
             id: `customer-${customerKey}`,
             customerName: data.billTo.name,
             customerEmail: data.billTo.email || 'N/A',
-            totalAmount: 0,
-            paidAmount: 0,
+            totalSales: 0,
+            totalPayments: 0,
             balanceAmount: 0,
             invoiceCount: 0,
+            transactionCount: 0,
             lastInvoiceDate: invoice.created_at,
-            invoices: []
+            lastTransactionDate: null,
+            invoices: [],
+            transactions: []
           });
         }
 
         const customer = customerMap.get(customerKey);
-        customer.totalAmount += data.total;
+        customer.totalSales += data.total;
         customer.invoiceCount += 1;
         customer.invoices.push(invoice);
         
-        // For demo purposes, assume some invoices are paid
-        const isPaid = Math.random() > 0.3; // 70% chance of being paid
-        if (isPaid) {
-          customer.paidAmount += data.total;
-        }
-        
-        customer.balanceAmount = customer.totalAmount - customer.paidAmount;
-        
-        // Determine status
-        if (customer.balanceAmount === 0) {
-          customer.status = 'paid';
-        } else {
-          const invoiceDate = new Date(invoice.created_at);
-          const daysDiff = (new Date().getTime() - invoiceDate.getTime()) / (1000 * 3600 * 24);
-          customer.status = daysDiff > 30 ? 'overdue' : 'pending';
+        if (new Date(invoice.created_at) > new Date(customer.lastInvoiceDate)) {
+          customer.lastInvoiceDate = invoice.created_at;
         }
       });
 
-      const customerStatements = Array.from(customerMap.values());
+      // Process transactions and link them to customers
+      transactions?.forEach((transaction) => {
+        // For sale transactions, try to match with existing customers
+        if (transaction.type === 'sale' || transaction.type === 'income') {
+          // If linked to an invoice, find the customer from that invoice
+          if (transaction.invoice_id) {
+            const linkedInvoice = invoices?.find(inv => inv.id === transaction.invoice_id);
+            if (linkedInvoice) {
+              const data = linkedInvoice.data as any;
+              const customerKey = `${data.billTo.name}-${data.billTo.email || 'no-email'}`;
+              
+              if (customerMap.has(customerKey)) {
+                const customer = customerMap.get(customerKey);
+                customer.transactions.push(transaction);
+                customer.transactionCount += 1;
+                customer.totalPayments += transaction.amount;
+                
+                if (!customer.lastTransactionDate || new Date(transaction.created_at) > new Date(customer.lastTransactionDate)) {
+                  customer.lastTransactionDate = transaction.created_at;
+                }
+              }
+            }
+          } else {
+            // For transactions without invoice links, create customer based on description
+            const customerName = transaction.description.includes('from') 
+              ? transaction.description.split('from')[1]?.trim() || 'Unknown Customer'
+              : 'Cash Sale';
+            
+            const customerKey = `${customerName}-no-email`;
+            
+            if (!customerMap.has(customerKey)) {
+              customerMap.set(customerKey, {
+                id: `customer-${customerKey}`,
+                customerName: customerName,
+                customerEmail: 'N/A',
+                totalSales: 0,
+                totalPayments: 0,
+                balanceAmount: 0,
+                invoiceCount: 0,
+                transactionCount: 0,
+                lastInvoiceDate: null,
+                lastTransactionDate: transaction.created_at,
+                invoices: [],
+                transactions: []
+              });
+            }
+
+            const customer = customerMap.get(customerKey);
+            customer.transactions.push(transaction);
+            customer.transactionCount += 1;
+            customer.totalSales += transaction.amount;
+            customer.totalPayments += transaction.amount; // Assume cash sales are paid immediately
+            
+            if (!customer.lastTransactionDate || new Date(transaction.created_at) > new Date(customer.lastTransactionDate)) {
+              customer.lastTransactionDate = transaction.created_at;
+            }
+          }
+        }
+      });
+
+      // Calculate balance and status for each customer
+      const customerStatements = Array.from(customerMap.values()).map(customer => {
+        customer.balanceAmount = customer.totalSales - customer.totalPayments;
+        
+        // Determine status
+        if (customer.balanceAmount <= 0) {
+          customer.status = 'paid';
+        } else {
+          const lastDate = customer.lastInvoiceDate || customer.lastTransactionDate;
+          if (lastDate) {
+            const daysDiff = (new Date().getTime() - new Date(lastDate).getTime()) / (1000 * 3600 * 24);
+            customer.status = daysDiff > 30 ? 'overdue' : 'pending';
+          } else {
+            customer.status = 'pending';
+          }
+        }
+        
+        return customer;
+      });
+
       setStatements(customerStatements);
       setFilteredStatements(customerStatements);
     } catch (error) {
@@ -130,17 +214,23 @@ const Statements = () => {
   }, [searchTerm, statusFilter, statements]);
 
   const handleGenerateStatement = (customerId: string) => {
-    toast({
-      title: "Statement Generated",
-      description: "Customer statement has been generated successfully",
-    });
+    const customer = statements.find(s => s.id === customerId);
+    if (customer) {
+      toast({
+        title: "Statement Generated",
+        description: `Statement for ${customer.customerName} has been generated successfully`,
+      });
+    }
   };
 
   const handleViewStatement = (customerId: string) => {
-    toast({
-      title: "View Statement",
-      description: "Opening customer statement preview",
-    });
+    const customer = statements.find(s => s.id === customerId);
+    if (customer) {
+      toast({
+        title: "View Statement",
+        description: `Opening statement for ${customer.customerName}`,
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -158,6 +248,7 @@ const Statements = () => {
 
   const totalBalance = statements.reduce((sum, statement) => sum + statement.balanceAmount, 0);
   const totalOutstanding = statements.filter(s => s.status !== 'paid').length;
+  const totalSales = statements.reduce((sum, statement) => sum + statement.totalSales, 0);
 
   return (
     <div className="min-h-screen">
@@ -165,42 +256,53 @@ const Statements = () => {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Customer Statements</h1>
           <p className="mt-2 text-muted-foreground">
-            Manage and view customer account statements
+            View customer account statements based on invoices and transactions
           </p>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card className="glass-panel">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalOutstanding}</div>
-              <p className="text-xs text-muted-foreground">customers with pending payments</p>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-panel">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{totalBalance.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">outstanding amount</p>
-            </CardContent>
-          </Card>
-
+        <div className="grid gap-6 md:grid-cols-4 mb-8">
           <Card className="glass-panel">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <User className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{statements.length}</div>
               <p className="text-xs text-muted-foreground">active customers</p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-panel">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{totalSales.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">total sales amount</p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-panel">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Outstanding Amount</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{totalBalance.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground">pending payments</p>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-panel">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Customers</CardTitle>
+              <User className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalOutstanding}</div>
+              <p className="text-xs text-muted-foreground">with outstanding balance</p>
             </CardContent>
           </Card>
         </div>
@@ -254,6 +356,9 @@ const Statements = () => {
             <Card className="glass-panel">
               <CardHeader>
                 <CardTitle>Customer Statements</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Based on your invoices and sales transactions
+                </p>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -267,8 +372,9 @@ const Statements = () => {
                         <TableHead>Customer</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Invoices</TableHead>
-                        <TableHead>Total Amount</TableHead>
-                        <TableHead>Paid Amount</TableHead>
+                        <TableHead>Transactions</TableHead>
+                        <TableHead>Total Sales</TableHead>
+                        <TableHead>Payments</TableHead>
                         <TableHead>Balance</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
@@ -280,9 +386,12 @@ const Statements = () => {
                           <TableCell className="font-medium">{statement.customerName}</TableCell>
                           <TableCell>{statement.customerEmail}</TableCell>
                           <TableCell>{statement.invoiceCount}</TableCell>
-                          <TableCell>₹{statement.totalAmount.toFixed(2)}</TableCell>
-                          <TableCell>₹{statement.paidAmount.toFixed(2)}</TableCell>
-                          <TableCell>₹{statement.balanceAmount.toFixed(2)}</TableCell>
+                          <TableCell>{statement.transactionCount}</TableCell>
+                          <TableCell>₹{statement.totalSales.toFixed(2)}</TableCell>
+                          <TableCell>₹{statement.totalPayments.toFixed(2)}</TableCell>
+                          <TableCell className={statement.balanceAmount > 0 ? "text-red-600 font-medium" : "text-green-600"}>
+                            ₹{statement.balanceAmount.toFixed(2)}
+                          </TableCell>
                           <TableCell>{getStatusBadge(statement.status)}</TableCell>
                           <TableCell>
                             <div className="flex gap-2">
@@ -310,7 +419,14 @@ const Statements = () => {
                   </Table>
                 ) : (
                   <div className="text-center py-10">
-                    <p>No customer statements found</p>
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Customer Statements Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {statements.length === 0 
+                        ? "Create some invoices or sales transactions to see customer statements here."
+                        : "No customers match your current search criteria."
+                      }
+                    </p>
                   </div>
                 )}
               </CardContent>

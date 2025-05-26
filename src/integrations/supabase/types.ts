@@ -92,6 +92,7 @@ export type Database = {
           date: string
           description: string
           id: string
+          invoice_id: string | null
           type: string
           user_id: string | null
         }
@@ -102,6 +103,7 @@ export type Database = {
           date: string
           description: string
           id?: string
+          invoice_id?: string | null
           type: string
           user_id?: string | null
         }
@@ -112,10 +114,19 @@ export type Database = {
           date?: string
           description?: string
           id?: string
+          invoice_id?: string | null
           type?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
