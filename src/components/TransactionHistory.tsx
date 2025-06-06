@@ -4,9 +4,10 @@ import { Transaction, TransactionType } from '@/lib/types';
 import TransactionCard from './TransactionCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Plus, FileText, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Link } from 'react-router-dom';
 
 interface TransactionHistoryProps {
   transactions: Transaction[];
@@ -85,7 +86,17 @@ const TransactionHistory = ({
   return (
     <div className="glass-panel p-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h2 className="text-xl font-semibold">{title}</h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          {filterTypes?.includes('sale' as TransactionType) && (
+            <Button asChild variant="outline" size="sm">
+              <Link to="/reports/sales">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Sales Report
+              </Link>
+            </Button>
+          )}
+        </div>
         
         <div className="flex w-full sm:w-auto items-center space-x-2">
           <div className="relative flex-1 sm:flex-initial">
@@ -99,6 +110,12 @@ const TransactionHistory = ({
           </div>
           <Button variant="outline" size="icon">
             <Filter className="h-4 w-4" />
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/transactions">
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </Link>
           </Button>
         </div>
       </div>
@@ -120,7 +137,20 @@ const TransactionHistory = ({
         </div>
       ) : (
         <div className="text-center py-10">
-          <p className="text-muted-foreground">No transactions found</p>
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No transactions found</h3>
+          <p className="text-muted-foreground mb-4">
+            {transactions.length === 0 
+              ? "Start by adding your first transaction"
+              : "No transactions match your search criteria"
+            }
+          </p>
+          <Button asChild>
+            <Link to="/transactions">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Transaction
+            </Link>
+          </Button>
         </div>
       )}
     </div>

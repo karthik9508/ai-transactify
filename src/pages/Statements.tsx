@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, FileText, Download, Eye, Calendar, User } from 'lucide-react';
+import { Search, FileText, Download, Eye, Calendar, User, ExternalLink, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface CustomerStatement {
   id: string;
@@ -258,6 +258,28 @@ const Statements = () => {
           <p className="mt-2 text-muted-foreground">
             View customer account statements based on invoices and transactions
           </p>
+          
+          {/* Quick Actions */}
+          <div className="flex justify-center gap-4 mt-4">
+            <Button asChild variant="outline">
+              <Link to="/invoice">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Invoice
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/transactions">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Transaction
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/reports/sales">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Sales Report
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -273,7 +295,7 @@ const Statements = () => {
             </CardContent>
           </Card>
 
-          <Card className="glass-panel">
+          <Card className="glass-panel cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => window.location.href = '/reports/sales'}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -385,8 +407,20 @@ const Statements = () => {
                         <TableRow key={statement.id}>
                           <TableCell className="font-medium">{statement.customerName}</TableCell>
                           <TableCell>{statement.customerEmail}</TableCell>
-                          <TableCell>{statement.invoiceCount}</TableCell>
-                          <TableCell>{statement.transactionCount}</TableCell>
+                          <TableCell>
+                            <Button variant="link" className="p-0 h-auto">
+                              <Link to="/invoice" className="text-primary">
+                                {statement.invoiceCount}
+                              </Link>
+                            </Button>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="link" className="p-0 h-auto">
+                              <Link to="/transactions" className="text-primary">
+                                {statement.transactionCount}
+                              </Link>
+                            </Button>
+                          </TableCell>
                           <TableCell>₹{statement.totalSales.toFixed(2)}</TableCell>
                           <TableCell>₹{statement.totalPayments.toFixed(2)}</TableCell>
                           <TableCell className={statement.balanceAmount > 0 ? "text-red-600 font-medium" : "text-green-600"}>
@@ -427,6 +461,20 @@ const Statements = () => {
                         : "No customers match your current search criteria."
                       }
                     </p>
+                    <div className="flex justify-center gap-4">
+                      <Button asChild>
+                        <Link to="/invoice">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create First Invoice
+                        </Link>
+                      </Button>
+                      <Button variant="outline" asChild>
+                        <Link to="/transactions">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Transaction
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
