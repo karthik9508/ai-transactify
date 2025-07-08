@@ -47,7 +47,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, businessInfo } = await req.json();
+    const { prompt, businessInfo, userId } = await req.json();
 
     if (!prompt) {
       throw new Error('Prompt is required');
@@ -58,6 +58,43 @@ serve(async (req) => {
 
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Try to extract customer name from prompt to fetch from database
+    let customerData = null;
+    if (userId) {
+      // Simple pattern matching to find customer names in the prompt
+      const customerNamePatterns = [
+        /(?:for|to|bill to|invoice to|customer|client)[\s:]*([A-Z][a-zA-Z\s&\.,-]+?)(?:\s+for|\s+at|\s+on|\.|,|$)/i,
+        /([A-Z][a-zA-Z\s&\.,-]+?)(?:\s+for|\s+owes|\s+ordered|\s+purchased)/i
+      ];
+      
+      let customerName = null;
+      for (const pattern of customerNamePatterns) {
+        const match = prompt.match(pattern);
+        if (match && match[1]) {
+          customerName = match[1].trim();
+          if (customerName.length > 2 && customerName.length < 100) {
+            break;
+          }
+        }
+      }
+      
+      // Search for customer in database if we found a potential name
+      if (customerName) {
+        const { data: customers, error: customerError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('user_id', userId)
+          .ilike('customer_name', `%${customerName}%`)
+          .eq('is_active', true)
+          .limit(1);
+          
+        if (!customerError && customers && customers.length > 0) {
+          customerData = customers[0];
+          console.log('Found customer in database:', customerData.customer_name);
+        }
+      }
+    }
 
     // Get the next invoice number
     const { data: counterData, error: counterError } = await supabase
@@ -115,8 +152,23 @@ serve(async (req) => {
               "taxRate": number (percentage, default to 18% if not specified)",
               "taxAmount": number (subtotal * taxRate / 100)",
               "total": number (subtotal + taxAmount)"
-            }
-            Fill in any missing details with reasonable defaults. Always use the exact invoice number provided: ${uniqueInvoiceNumber}. Do not include any explanations in your response, only the JSON object.`;
+            }`;
+
+    // If we found customer data in database, include it in the prompt
+    if (customerData) {
+      systemPrompt += `
+            
+            IMPORTANT: Use the following customer information for the billTo section:
+            - Name: ${customerData.customer_name}
+            - Address: ${customerData.address || ''} ${customerData.city || ''} ${customerData.state || ''} ${customerData.pincode || ''}
+            - Email: ${customerData.email || ''}
+            - Phone: ${customerData.phone || ''}
+            - GSTN: ${customerData.gstn || ''}
+            
+            Use this exact customer information in the billTo section instead of extracting from the prompt.`;
+    }
+            
+    systemPrompt += ` Fill in any missing details with reasonable defaults. Always use the exact invoice number provided: ${uniqueInvoiceNumber}. Do not include any explanations in your response, only the JSON object.`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -161,7 +213,8 @@ serve(async (req) => {
 
     const finalInvoiceData = {
       ...invoiceData,
-      businessInfo
+      businessInfo,
+      customerId: customerData?.id || null
     };
 
     return new Response(JSON.stringify(finalInvoiceData), {

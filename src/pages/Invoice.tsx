@@ -197,7 +197,8 @@ const Invoice = () => {
           businessInfo: {
             ...businessInfo,
             gstn_number: businessInfo.gstn_number || null
-          }
+          },
+          userId: user?.id
         },
       });
 
@@ -223,7 +224,8 @@ const Invoice = () => {
           .insert({
             invoice_number: data.invoiceNumber,
             data: data,
-            user_id: user?.id
+            user_id: user?.id,
+            customer_id: data.customerId
           });
         
         if (saveError) {
