@@ -26,6 +26,7 @@ import BalanceSheet from "./pages/BalanceSheet";
 import FinancialAnalysis from "./pages/FinancialAnalysis";
 import Settings from "./pages/Settings";
 import Statements from "./pages/Statements";
+import Customers from "./pages/Customers";
 
 // Create a single instance of QueryClient
 const queryClient = new QueryClient();
@@ -88,7 +89,23 @@ const App = () => (
                 } />
               </Route>
               
-              {/* Sales routes */}
+              {/* Customer and sales routes */}
+              <Route path="/customers" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Customers />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/statements" element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Statements />
+                  </AppLayout>
+                </ProtectedRoute>
+              } />
+              
               <Route path="/sales">
                 <Route path="statements" element={
                   <ProtectedRoute>

@@ -28,7 +28,8 @@ import {
   BookText,
   MessageCircle,
   HelpCircle,
-  FileCheck
+  FileCheck,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/context/AuthContext';
@@ -186,29 +187,32 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Sales Group */}
+        {/* Sales & Customers Group */}
         <SidebarGroup className="mt-6 px-3">
           <SidebarGroupLabel className="px-4 text-xs uppercase tracking-widest text-muted-foreground/80 font-semibold">
-            Sales
+            Sales & Customers
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mounted && ['/invoice', '/reports/sales', '/sales/statements'].map((path, i) => {
+              {mounted && ['/customers', '/invoice', '/statements', '/reports/sales'].map((path, i) => {
                 const isCurrentActive = isActive(path);
                 const icons = {
+                  '/customers': <Users className={`${isCurrentActive ? 'text-primary' : ''}`} />,
                   '/invoice': <FileText className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/reports/sales': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />,
-                  '/sales/statements': <FileCheck className={`${isCurrentActive ? 'text-primary' : ''}`} />
+                  '/statements': <FileCheck className={`${isCurrentActive ? 'text-primary' : ''}`} />,
+                  '/reports/sales': <TrendingUp className={`${isCurrentActive ? 'text-primary' : ''}`} />
                 };
                 const labels = {
+                  '/customers': 'Customers',
                   '/invoice': 'Invoice',
-                  '/reports/sales': 'Sales Report',
-                  '/sales/statements': 'Statements'
+                  '/statements': 'Statements',
+                  '/reports/sales': 'Sales Report'
                 };
                 const tooltips = {
+                  '/customers': 'Customer Management',
                   '/invoice': 'Invoice',
-                  '/reports/sales': 'Sales Report',
-                  '/sales/statements': 'Customer Statements'
+                  '/statements': 'Customer Statements',
+                  '/reports/sales': 'Sales Report'
                 };
                 
                 return (
