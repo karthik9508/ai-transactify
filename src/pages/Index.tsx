@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import Hero from '@/components/Hero';
 import { ChevronDown, Star, ArrowRight, CheckCircle, Zap, Shield, BarChart, FileText, Users, Clock } from 'lucide-react';
 
@@ -269,10 +269,10 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <Button asChild size="lg" className="px-10 py-6 text-lg font-semibold">
-                <Link to="/auth">Start Free Trial</Link>
+                <Link href="/auth">Start Free Trial</Link>
               </Button>
               <Button variant="outline" size="lg" className="px-10 py-6 text-lg">
-                <Link to="/dashboard">Schedule Demo</Link>
+                <Link href="/dashboard">Schedule Demo</Link>
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
