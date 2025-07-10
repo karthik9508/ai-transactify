@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useTheme as useNextTheme } from "next-themes";
 
 type Theme = "light" | "dark" | "system";
 
@@ -10,47 +11,18 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Try to get the theme from localStorage
-    if (typeof window !== 'undefined') {
-      // Check if we're running in the browser environment
-      const savedTheme = localStorage.getItem("theme") as Theme;
-      return savedTheme || "system";
-    }
-    // Default to system theme if not in browser
-    return "system";
-  });
+  const { theme: nextTheme, setTheme: setNextTheme } = useNextTheme();
+  const [mounted, setMounted] = useState(false);
 
-  // Update localStorage and apply the theme class when theme changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem("theme", theme);
-      
-      if (theme === "system") {
-        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-        document.documentElement.classList.toggle("dark", systemTheme === "dark");
-      } else {
-        document.documentElement.classList.toggle("dark", theme === "dark");
-      }
-    }
-  }, [theme]);
+    setMounted(true);
+  }, []);
 
-  // Listen for system theme changes
-  useEffect(() => {
-    if (theme === "system") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      
-      const handleChange = (e: MediaQueryListEvent) => {
-        document.documentElement.classList.toggle("dark", e.matches);
-      };
-      
-      mediaQuery.addEventListener("change", handleChange);
-      return () => mediaQuery.removeEventListener("change", handleChange);
-    }
-  }, [theme]);
-
+  if (!mounted) {
+    return null;
+  }
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme: (nextTheme as Theme) || "system", setTheme: setNextTheme as (theme: Theme) => void }}>
       {children}
     </ThemeContext.Provider>
   );
